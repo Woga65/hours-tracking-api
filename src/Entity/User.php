@@ -42,14 +42,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $vkey = null;
 
     #[ORM\Column]
-    private ?bool $verified = null;
+    private ?bool $verified = false;
 
     #[ORM\Column]
-    private ?\DateTimeImmutable $timestamp = null;
+    private ?\DateTimeImmutable $timestamp;
+
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: WorkingTime::class, orphanRemoval: true)]
+    private Collection $workingTimes;
 
     public function __construct()
     {
         $this->apiTokens = new ArrayCollection();
+        $this->workingTimes = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -188,7 +192,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function isVerified(): ?bool
+    public function isVerified(): bool
     {
         return $this->verified;
     }
@@ -200,7 +204,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getTimestamp(): ?\DateTimeImmutable
+    public function getTimestamp(): \DateTimeImmutable
     {
         return $this->timestamp;
     }
@@ -208,6 +212,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setTimestamp(\DateTimeImmutable $timestamp): static
     {
         $this->timestamp = $timestamp;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, WorkingTime>
+     */
+    public function getWorkingTimes(): Collection
+    {
+        return $this->workingTimes;
+    }
+
+    public function addWorkingTime(WorkingTime $workingTime): static
+    {
+        if (!$this->workingTimes->contains($workingTime)) {
+            $this->workingTimes->add($workingTime);
+            $workingTime->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeWorkingTime(WorkingTime $workingTime): static
+    {
+        if ($this->workingTimes->removeElement($workingTime)) {
+            // set the owning side to null (unless already changed)
+            if ($workingTime->getUser() === $this) {
+                $workingTime->setUser(null);
+            }
+        }
 
         return $this;
     }
